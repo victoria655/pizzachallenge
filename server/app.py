@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, make_response,request
 from flask_migrate import Migrate
-from models import db, Restaurant, Pizza
+from models import db, Restaurant, Pizza,RestaurantPizza
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,10 +45,44 @@ def get_pizzas():
         return make_response(jsonify(response), 204) 
     else:
         return make_response(jsonify(response), 200)
-@app.route('/pizzas', methods=['POST'])
-def create_pizza():
+@app.route('/restaurant_pizzas', methods=['POST'])
+def create_restaurant_pizza():
     data = request.get_json()
-    new_pizza = Pizza(name=data['name'], ingredients=data['ingredients'])
-    db.session.add(new_pizza)
+
+    price = data.get('price')
+    pizza_id = data.get('pizza_id')
+    restaurant_id = data.get('restaurant_id')
+
+    # Validation
+    if price is None or not (1 <= price <= 30):
+        return make_response(jsonify({"errors": ["Price must be between 1 and 30"]}), 400)
+
+    pizza = Pizza.query.get(pizza_id)
+    restaurant = Restaurant.query.get(restaurant_id)
+
+    if not pizza or not restaurant:
+        return make_response(jsonify({"error": "Pizza or Restaurant not found"}), 404)
+
+    # ✅ Use the RestaurantPizza model
+    new_rp = RestaurantPizza(price=price, pizza_id=pizza_id, restaurant_id=restaurant_id)
+    db.session.add(new_rp)
     db.session.commit()
-    return make_response(jsonify(new_pizza.to_dict()), 201)
+
+    response_data = {
+        "id": new_rp.id,
+        "price": new_rp.price,
+        "pizza_id": new_rp.pizza_id,
+        "restaurant_id": new_rp.restaurant_id,
+        "pizza": {
+            "id": pizza.id,
+            "name": pizza.name,
+            "ingredients": pizza.ingredients
+        },
+        "restaurant": {
+            "id": restaurant.id,
+            "name": restaurant.name,
+            "address": restaurant.address
+        }
+    }
+
+    return make_response(jsonify(response_data), 201)
