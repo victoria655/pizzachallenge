@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test RestaurantPizza API</title>
+</head>
+<body>
+  <h2>Create RestaurantPizza</h2>
+
+  <form id="pizzaForm">
+    <label for="restaurant_id">Restaurant ID:</label>
+    <input type="number" id="restaurant_id" name="restaurant_id" required><br><br>
+
+    <label for="pizza_id">Pizza ID:</label>
+    <input type="number" id="pizza_id" name="pizza_id" required><br><br>
+
+    <label for="price">Price (1-30):</label>
+    <input type="number" id="price" name="price" required><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <h2>Other API Tests</h2>
+  <button onclick="testGetRestaurants()">GET /restaurants</button>
+  <button onclick="testGetPizzas()">GET /pizzas</button>
+  <br><br>
+
+  <label for="single_restaurant_id">GET/DELETE /restaurants/:id</label><br>
+  <input type="number" id="single_restaurant_id" placeholder="Restaurant ID">
+  <button onclick="testGetSingleRestaurant()">GET One</button>
+  <button onclick="testDeleteRestaurant()">DELETE</button>
+
+  <h2>API Response</h2>
+  <pre id="result"></pre>
+
+  <script>
+    const baseURL = 'http://localhost:5000';
+    const output = document.getElementById('result');
+
+    // Submit new restaurant-pizza relationship
+    document.getElementById('pizzaForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const price = parseFloat(document.getElementById('price').value);
+      const restaurant_id = parseInt(document.getElementById('restaurant_id').value);
+      const pizza_id = parseInt(document.getElementById('pizza_id').value);
+
+      try {
+        const response = await fetch(`${baseURL}/restaurant_pizzas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ price, restaurant_id, pizza_id })
+        });
+
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        output.textContent = 'Error: ' + error.message;
+      }
+    });
+
+    // GET all restaurants
+    async function testGetRestaurants() {
+      try {
+        const res = await fetch(`${baseURL}/restaurants`);
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error fetching restaurants: ' + err.message;
+      }
+    }
+
+    // GET all pizzas
+    async function testGetPizzas() {
+      try {
+        const res = await fetch(`${baseURL}/pizzas`);
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error fetching pizzas: ' + err.message;
+      }
+    }
+
+    // GET a single restaurant by ID
+    async function testGetSingleRestaurant() {
+      const id = document.getElementById('single_restaurant_id').value;
+      if (!id) return output.textContent = 'Please enter a restaurant ID.';
+
+      try {
+        const res = await fetch(`${baseURL}/restaurants/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          output.textContent = JSON.stringify(data, null, 2);
+        } else {
+          output.textContent = `Error ${res.status}: Restaurant not found.`;
+        }
+      } catch (err) {
+        output.textContent = 'Fetch error: ' + err.message;
+      }
+    }
+
+    // DELETE a restaurant by ID
+    async function testDeleteRestaurant() {
+      const id = document.getElementById('single_restaurant_id').value;
+      if (!id) return output.textContent = 'Please enter a restaurant ID.';
+
+      try {
+        const res = await fetch(`${baseURL}/restaurants/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (res.status === 204) {
+          output.textContent = `Restaurant with ID ${id} deleted successfully.`;
+        } else {
+          const data = await res.json();
+          output.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        output.textContent = 'Delete error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

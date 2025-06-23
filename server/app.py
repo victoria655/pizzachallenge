@@ -2,10 +2,13 @@ from flask import Flask, jsonify, make_response,request
 from flask_migrate import Migrate
 from models import db, Restaurant, Pizza,RestaurantPizza
 from dotenv import load_dotenv
+from flask_cors import CORS
+
 
 load_dotenv()
 app = Flask(__name__)
 app.config.from_prefixed_env()
+CORS(app)
 
 
 db.init_app(app)
